@@ -85,9 +85,18 @@ void NativeModuleLoader::GetCacheUsage(
 
 void NativeModuleLoader::SourceObjectGetter(
     Local<Name> property, const PropertyCallbackInfo<Value>& info) {
-  Local<Context> context = info.GetIsolate()->GetCurrentContext();
-  info.GetReturnValue().Set(
-      per_process::native_module_loader.GetSourceObject(context));
+  Isolate* isolate = info.GetIsolate();
+
+  const NativeModuleRecordMap& source_ =
+      per_process::native_module_loader.source_;
+  std::vector<Local<Value>> ids;
+  ids.reserve(source_.size());
+
+  for (auto const& x : source_) {
+    ids.push_back(OneByteString(isolate, x.first.c_str(), x.first.size()));
+  }
+
+  info.GetReturnValue().Set(Array::New(isolate, ids.data(), ids.size()));
 }
 
 void NativeModuleLoader::ConfigStringGetter(
